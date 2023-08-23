@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PornHub URL Grabber</title>
+</head>
+<body>
+    <h1>PornHub URL Grabber</h1>
+    <form id="textForm">
+        <label for="textInput">Enter URLs:</label><br>
+        <textarea id="textInput" name="text" rows="4" cols="60" required></textarea><br>
+        <button type="button" onclick="sendText()">Submit</button>
+    </form>
+    <p id="responseMessage"></p>
+
+    <script>
+        function sendText() {
+            const text = document.getElementById("textInput").value;
+
+            fetch('http://localhost:8008/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("responseMessage").textContent = data.message;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>

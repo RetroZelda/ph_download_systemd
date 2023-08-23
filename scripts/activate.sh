@@ -15,6 +15,7 @@ source "$venv_name/bin/activate"
 
 pip3 install --upgrade git+https://github.com/Egsagon/PHUB.git
 pip3 install validators
+pip3 install Flask
 
-./monitor.sh &
+./monitor.sh & ./run_web.sh & 
 

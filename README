@@ -19,6 +19,13 @@ Usage:
 
     If you want to change the output folder, just modify the `folder_to_save` variable inside of ./scripts/monitor.sh
 
+Webserver:
+    There is a super basic and unsecure web server that runs on port 8008 that you
+    can go to in order to easily add urls to be grabbed.  This is unsecure and really 
+    basic, so i wouldnt expose this outside of your network so if you use nginx or 
+    another reverse proxy, i would recomend to make sure it can only be accessed internally
+
+
 Special Thanks:
     Special thanks to https://github.com/Egsagon/PHUB.git for doing the hard work for me
     
