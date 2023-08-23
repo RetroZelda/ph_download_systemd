@@ -1,9 +1,5 @@
 #!/bin/bash
 
-echo "POOOOP"
-echo $(pwd)
-echo $(whoami)
-
 # Check if inotifywait is installed
 command -v inotifywait >/dev/null 2>&1 || { echo >&2 "Please install inotify-tools package. Aborting."; exit 1; }
 
