@@ -55,14 +55,24 @@ def main():
         for url in valid_urls:
             video = client.get(url) 
 
-            temp_path = f"{temp_dir}/{detox_filename(video.author.name)}-{detox_filename(video.title)}.mp4"
-            final_path = f"{args.output_dir}/{detox_filename(video.author.name)}-{detox_filename(video.title)}.mp4"
-
+            subfolder = f"{detox_filename(video.author.name)}-{detox_filename(video.title)}"
+            final_name = f"{detox_filename(video.title)}.mp4"
+            
+            # grab the file into our temp path
             print(f"Grabbing: {video.title}")
-            saved_file = video.download(path = temp_path, quality = Quality.BEST)
+            temp_file = f"{temp_dir}/{final_name}"
+            saved_file = video.download(path = temp_file, quality = Quality.BEST)
 
-            print(f"Moving to: {final_path}")
-            shutil.move(saved_file, final_path)
+            # ensure our target dir exists
+            output_path = f"{args.output_dir}/{subfolder}"
+            if not os.path.exists(output_path):
+                print(f"Creating: {output_path}")
+                os.makedirs(output_path)
+
+            # move the file to our target dir
+            final_final = f"{output_path}/{final_name}"
+            print(f"Moving to: {final_final}")
+            shutil.move(saved_file, final_final)
 
 
 
