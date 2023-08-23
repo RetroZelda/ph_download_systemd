@@ -16,7 +16,10 @@
         function sendText() {
             const text = document.getElementById("textInput").value;
 
-            fetch('http://localhost:8008/save', {
+            const currentOrigin = window.location.origin;
+            const saveURL = `${currentOrigin}/save`;
+
+            fetch(saveURL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
