@@ -30,7 +30,7 @@ WorkingDirectory=$script_dir
 ExecStart=$script_dir/activate.sh
 ExecStop=$script_dir/deactivate.sh
 StandardOutput=file:$log_dir/general.log
-StandardError=file:$log_dir/error.log
+StandardError=inherit
 
 [Install]
 WantedBy=default.target
