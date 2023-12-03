@@ -1,20 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>PornHub URL Grabber</title>
+    <title>Porn URL Grabber</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Style to display divs in a row */
+        .container {
+            display: flex;
+        }
+
+        /* Optional styling for form and table */
+        .form-container {
+            margin-right: 20px;
+            border: 1px solid #ccc;
+        }
+
+        .table-container {
+            border: 1px solid #ccc;
+        }
+
+        /* Style for the table */
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        /* Style for table headers */
+        th, td {
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        /* Alternate row background color */
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+    </style>
 </head>
 <body>
-    <h1>PornHub URL Grabber</h1>
-    <form id="textForm">
-        <label for="textInput">Enter URLs:</label><br>
-        <textarea id="textInput" name="text" rows="4" cols="60" required></textarea><br>
-        <button type="button" onclick="sendText()">Submit</button>
-    </form>
-    <p id="responseMessage"></p>
+    <h1>Porn URL Grabber</h1>
+    <p>Enter a PornHub or VRPorn URL in new lines to trigger your server to scrape the video found in the pages.</p>
+
+    <div class="container">
+        <div class="form-container">
+            <h1>Enter URLs:</h1>
+            <form id="textForm">
+                <label for="textInput">Enter URLs:</label><br>
+                <textarea id="textInput" name="text" rows="4" cols="60" required></textarea><br>
+                <button type="button" onclick="sendText()">Submit</button>
+            </form>
+            <p id="responseMessage"></p>
+        </div>
+
+        <div class="table-container">
+            <h1>History:</h1>
+            <table id="history">
+                
+            </table>
+        </div>
+    </div>
+    <br>
+    <p>
+        <a href=https://github.com/RetroZelda/ph_download_systemd>Github</a>
+    </p>
 
     <script>
         function sendText() {
-            const text = document.getElementById("textInput").value;
+            const textInput = document.getElementById("textInput");
+            const text = textInput.value;
 
             const currentOrigin = window.location.origin;
             const saveURL = `${currentOrigin}/save`;
@@ -29,10 +83,32 @@
             .then(response => response.json())
             .then(data => {
                 document.getElementById("responseMessage").textContent = data.message;
+
+                // Add each URL to the history table
+                const urls = text.split('\n').map(url => url.trim()).filter(url => url !== '');
+                const historyTable = document.getElementById("history");
+                urls.forEach(url => {
+                    // Create a new row and cell
+                    const newRow = historyTable.insertRow(0);
+                    const newCell = newRow.insertCell(0);
+
+                    // Create a link element
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.target = "_blank";
+                    link.textContent = url;
+                    
+                    // Append the link to the cell
+                    newCell.appendChild(link);
+                });
+
+                // Clear the original text
+                textInput.value = '';
             })
             .catch(error => {
                 console.error('Error:', error);
             });
+            
         }
     </script>
 </body>

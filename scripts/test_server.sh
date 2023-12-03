@@ -20,5 +20,5 @@ pip3 install validators
 pip3 install Flask
 pip3 install tqdm
 
-./monitor.sh & ./run_web.sh & 
+./run_web.sh
 

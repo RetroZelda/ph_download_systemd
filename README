@@ -13,11 +13,15 @@ It will also create a ./input folder.
 The service will be run as the user who called ./install.sh
 
 Usage:
-    make a new file inside of ./input that has a single porhub url in each line.
+    make a new file inside of ./input that has a single porhub or vrporn url in each line.
     The service should pick it up and place each download inside of an ./output folder 
     When all videos are downloaded, that source file will be removed
 
     If you want to change the output folder, just modify the `folder_to_save` variable inside of ./scripts/monitor.sh
+
+VRPorn:
+    VRPorn requires an account to download.  You can specify your account's username and password inside 
+    ./config/vrp_credentials as a json key/value pair for both the username and password
 
 Webserver:
     There is a super basic and unsecure web server that runs on port 8008 that you

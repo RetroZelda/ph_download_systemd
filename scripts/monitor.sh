@@ -5,6 +5,7 @@ command -v inotifywait >/dev/null 2>&1 || { echo >&2 "Please install inotify-too
 
 folder_to_monitor=$(readlink -f "$(pwd)/../input")
 folder_to_save=$(readlink -f "$(pwd)/../output")
+folder_config=$(readlink -f "$(pwd)/../config")
 
 # Create the folder if it doesn't exist
 if [ ! -d "$folder_to_monitor" ]; then
@@ -20,7 +21,7 @@ inotifywait -m -e create "$folder_to_monitor" |
         for existing_file in "$folder_to_monitor"/*; do
             if [[ -f "$existing_file" ]]; then
 
-                python3 ./download.py -i "$existing_file" -o "$folder_to_save"
+                python3 ./download.py -i "$existing_file" -o "$folder_to_save" -c "$folder_config"
                 echo "$existing_file has finished processing"
                 rm "$existing_file"
             fi
