@@ -23,7 +23,8 @@ VRPorn:
     VRPorn requires an account to download.  You can specify your account's username and password inside 
     ./config/vrp_credentials as a json key/value pair for both the username and password
 
-    NOTE: If you are on a free account, you need to manually pull the logic token value from the cookie after logging into a browser.
+    NOTE: If you are on a free account or the captcha is stopping you from getting cookies, 
+    you need to manually pull the logic token value from the cookie after logging into a browser.
     The easiest way to do this:
         - Log into VRPorn on chrome
         - press F12 and navigate to the "Application" tab
