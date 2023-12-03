@@ -36,6 +36,12 @@
         tr:nth-child(even) {
             background-color: #f2f2f2;
         }
+        
+        #logContainer {
+            border: 1px solid #ccc;
+            max-height: 200px;  /* Set the maximum height as per your requirement */
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -61,11 +67,50 @@
         </div>
     </div>
     <br>
+    <h1>Log:</h1>
+    <div class="table-container" id="logContainer">
+        <table id="logTable">
+            
+        </table>
+    </div>
+    <br>
+    <button type="button" onclick="clearLog()">Clear</button>
+
+    <br>
+    <br>
+    <br>
+    <br>
     <p>
         <a href=https://github.com/RetroZelda/ph_download_systemd>Github</a>
     </p>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js"></script>
     <script>
+        const socket = io.connect(window.location.origin);
+        
+        socket.on('update_log', (data) => {
+            const logTable = document.getElementById("logTable");
+            data.new_lines.forEach(log => {
+                const newRow = logTable.insertRow(0);
+                const newCell = newRow.insertCell(0);
+                newCell.textContent = log;
+            });
+
+            // Remove excess rows if the total number of rows exceeds 1000
+            const excessRows = logTable.rows.length - 1000;
+            if (excessRows > 0) {
+                for (let i = 0; i < excessRows; i++) {
+                    logTable.deleteRow(logTable.rows.length - 1);
+                }
+            }
+        });
+        
+        function clearLog() {
+        const logTable = document.getElementById("logTable");
+        while (logTable.firstChild) {
+            logTable.removeChild(logTable.firstChild);
+        }
+    }
+
         function sendText() {
             const textInput = document.getElementById("textInput");
             const text = textInput.value;

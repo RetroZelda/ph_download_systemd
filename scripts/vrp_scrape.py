@@ -143,7 +143,7 @@ class VRP_Page:
                 list_rows = links_div.find_all('div', {'class': 'download-btn vr-download paid-download'})
                 
                 # if its 0 then we are probably a free account
-                if len(list_rows) is 0:
+                if len(list_rows) == 0:
                     list_rows = links_div.find_all('div', {'class': 'download-btn vr-download free-download'})
                     
                 # scrape each link

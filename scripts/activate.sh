@@ -17,7 +17,8 @@ pip3 install --upgrade git+https://github.com/Egsagon/PHUB.git
 pip install ffmpeg_progress_yield
 pip3 install BeautifulSoup4
 pip3 install validators
-pip3 install Flask
+pip3 install flask
+pip3 install flask-socketio
 pip3 install tqdm
 
 ./monitor.sh & ./run_web.sh & 
