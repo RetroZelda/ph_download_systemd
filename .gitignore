@@ -13,3 +13,4 @@ __pycache__/
 config/vrp_cookie_cache
 output/
 input/
+logs/
