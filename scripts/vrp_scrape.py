@@ -142,12 +142,17 @@ class VRP_Page:
                 links_div = soup.find('div', class_='list_row')
                 list_rows = links_div.find_all('div', {'class': 'download-btn vr-download paid-download'})
                 
+                # if its 0 then we are probably a free account
+                if len(list_rows) is 0:
+                    list_rows = links_div.find_all('div', {'class': 'download-btn vr-download free-download'})
+                    
                 # scrape each link
                 for row in list_rows:
 
                     # check for a "premium only" text
                     premium_elemt = row.find('span', class_='text_login')
                     if premium_elemt is not None:
+                        print("Found premium only link")
                         continue
 
                     # build our info

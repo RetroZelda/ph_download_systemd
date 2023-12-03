@@ -93,6 +93,8 @@ def GrabVRP(urls, destination_dir):
             target.download_file_with_progress(target_file)
 
             grabbed_files.append(VideoFileData(Filename=filename, SubFolder=subfolder, File=target_file))
+        else:
+            print(f"Unable to grab video from: {url}")
     return grabbed_files
 
 def main():
