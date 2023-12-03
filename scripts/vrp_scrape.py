@@ -22,6 +22,8 @@ class VRP_Authenticate:
             #print(f"Loaded Cookies: {self.Cookies}")
         except FileNotFoundError:
             print(f"{filename} not found")
+        except json.decoder.JSONDecodeError:
+            print(f"{filename} has invalid JSON")
 
     def IsAuthenticated(self):
         url = f"{self.BaseURL}/account"
@@ -142,13 +144,22 @@ class VRP_Page:
                 
                 # scrape each link
                 for row in list_rows:
+
+                    # check for a "premium only" text
+                    premium_elemt = row.find('span', class_='text_login')
+                    if premium_elemt is not None:
+                        continue
+
+                    # build our info
                     link = row.attrs['data']
                     quality = row.attrs['id']
                     size = "0"
 
                     # get the text for hte name and the filesize
-                    quality = row.find('span', class_='text_long').text.replace("Max Quality ", "")
                     size = row.find('span', class_='right').text
+                    quality_element = row.find('span', class_='text_long')
+                    if quality_element is not None:
+                        quality = quality_element.text.replace("Max Quality ", "")
 
                     self.Links.append(VRP_VideoData(quality=quality, size=size, link=link))
             else:

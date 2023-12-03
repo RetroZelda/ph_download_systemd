@@ -23,6 +23,19 @@ VRPorn:
     VRPorn requires an account to download.  You can specify your account's username and password inside 
     ./config/vrp_credentials as a json key/value pair for both the username and password
 
+    NOTE: If you are on a free account, you need to manually pull the logic token value from the cookie after logging into a browser.
+    The easiest way to do this:
+        - Log into VRPorn on chrome
+        - press F12 and navigate to the "Application" tab
+        - Under "Cookies" find the VRPorn url and select it
+        - Find "wordpress_logged_in_b01e9cfa0fd14e7d38d8cbcf73c69bc3" value and copy it
+        - Create a ./config/vrp_cookie_cache file
+        - Create a JSON with these 2 keys:
+            1. wordpress_sec_b01e9cfa0fd14e7d38d8cbcf73c69bc3
+            2. wordpress_logged_in_b01e9cfa0fd14e7d38d8cbcf73c69bc3
+        - Set the value of both keys to be the value you copied from chrome
+        ** Note that if the wordpress_logged_in_[hash] value differs in chrome then you probably need to update the JSON keys to match
+
 Webserver:
     There is a super basic and unsecure web server that runs on port 8008 that you
     can go to in order to easily add urls to be grabbed.  This is unsecure and really 
