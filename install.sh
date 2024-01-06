@@ -36,6 +36,9 @@ StandardError=inherit
 WantedBy=default.target
 EOF
 
+# ensure we have the log file
+touch $log_dir/general.log
+
 # ensure we have all the needed packages
 apt install inotify-tools
 
