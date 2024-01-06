@@ -48,7 +48,7 @@ def GrabPH(urls, destination_dir):
     for url in urls:
         video = client.get(url) 
 
-        subfolder = f"{detox_filename(video.author.name)}-{detox_filename(video.title)}"
+        subfolder = f"{detox_filename(video.author.name)}"
         final_name = f"{detox_filename(video.title)}.mp4"
         
         # grab the file into our temp path
@@ -93,7 +93,7 @@ def GrabVRP(urls, destination_dir):
         if target is not None:
             print(f"[VRP]Grabbing: {video_page.Name}({target.Quality})")
             filename = f"{detox_filename(video_page.Name)}-{detox_filename(target.Quality)}.mp4"
-            subfolder = f"{detox_filename(video_page.Author)}-{detox_filename(video_page.Name)}-{detox_filename(target.Quality)}"
+            subfolder = f"{detox_filename(video_page.Author)}"
             target_file = f"{destination_dir}/{filename}"
             target.download_file_with_progress(target_file)
 
@@ -153,7 +153,7 @@ def GrabYT(urls, destination_dir):
         video = YouTube(url)
         video_stream = video.streams.get_highest_resolution()
 
-        subfolder = f"{detox_filename(video.author)}-{detox_filename(video.title)}"
+        subfolder = f"{detox_filename(video.author)}"
         final_name = f"{detox_filename(video.title)}.{video_stream.subtype}"
         
         # grab the file into our temp path
