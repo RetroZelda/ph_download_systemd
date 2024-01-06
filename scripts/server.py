@@ -3,6 +3,7 @@ import argparse
 import tempfile
 import threading
 import time
+import os
 
 from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO
@@ -30,8 +31,11 @@ def read_log():
 
                 last_position = log_file.tell()  # Update the last position to the current position in the file
         except FileNotFoundError:
-            print(f"Log File {args.log_to_read} not found.")
+            new_lines = f"Log File {args.log_to_read} not found."
+            print(new_lines)
+            socketio.emit('update_log', {'new_lines': new_lines})
             break
+        os.sleep(1)
 
 @app.route('/')
 def index():
@@ -56,5 +60,5 @@ if __name__ == '__main__':
     print("Starting Flask Server")
     if args.log_to_read is not None and args.log_to_read != "":
         threading.Thread(target=read_log, daemon=True).start()
-    app.run(host='0.0.0.0', port=args.port)
+    app.run(host='0.0.0.0', port=args.port, debug=False)
 
