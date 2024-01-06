@@ -20,6 +20,7 @@ pip3 install validators
 pip3 install flask
 pip3 install flask-socketio
 pip3 install tqdm
+pip3 install pytube
 
 ./run_web.sh
 
