@@ -5,6 +5,7 @@ import threading
 import time
 import os
 
+from threading import Thread
 from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO
 
@@ -15,12 +16,50 @@ parser.add_argument("-o", "--output-dir", help="Output directory for files we sa
 parser.add_argument("-l", "--log-to-read", help="Log file we might want to monitor", required=False)
 args = parser.parse_args()
 
-app = Flask(__name__, template_folder=args.public_dir)
-socketio = SocketIO(app)
+class SharedResource:
+    def __init__(self):
+        self.num_connected = 0
+        self.thread_running = False
+        self.lock = threading.Lock()
 
-def read_log():
+    def thread_on(self):
+        with self.lock:
+            self.thread_running = True
+        
+    def thread_off(self):
+        with self.lock:
+            self.thread_running = False
+
+    def is_thread_on(self):
+        value = False
+        with self.lock:
+            value = self.thread_running
+        return value
+        
+    def add_num_connected(self, value):
+        new_value = 0
+        with self.lock:
+            self.num_connected += value
+            new_value = self.num_connected
+        return new_value
+
+    def set_num_connected(self, value):
+        with self.lock:
+            self.num_connected = value
+
+    def get_num_connected(self):
+        value = 0
+        with self.lock:
+            value = self.num_connected 
+        return value
+            
+
+def read_log(data):
+    data.thread_on()
+    print("Opening read_log thread")
+    print(f"Monitoring Log: {args.log_to_read}")
     last_position = 0
-    while True:
+    while data.get_num_connected() > 0:
         try:
             with open(args.log_to_read, 'r') as log_file:
                 log_file.seek(last_position)
@@ -28,6 +67,8 @@ def read_log():
 
                 if new_lines:
                     socketio.emit('update_log', {'new_lines': new_lines})
+                else:
+                    time.sleep(1)
 
                 last_position = log_file.tell()  # Update the last position to the current position in the file
         except FileNotFoundError:
@@ -35,7 +76,13 @@ def read_log():
             print(new_lines)
             socketio.emit('update_log', {'new_lines': new_lines})
             break
-        os.sleep(1)
+    print("closing read_log thread")
+    data.thread_off()
+
+app = Flask(__name__, template_folder=args.public_dir)
+socketio = SocketIO(app)
+num_connected = SharedResource()
+log_thread = Thread(target=read_log, daemon=True, args=(num_connected,))
 
 @app.route('/')
 def index():
@@ -52,13 +99,25 @@ def save_text():
     except Exception as e:
         return jsonify({'error': str(e)})
 
-#@socketio.on('connect')
-#def handle_connect():
-    #socketio.emit('update_log', {'new_lines': log_data})
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+    if num_connected.add_num_connected(1) == 1 and not num_connected.is_thread_on():
+        if args.log_to_read is not None and args.log_to_read != "":
+            log_thread.start()   
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+    if num_connected.add_num_connected(-1) == 0 and num_connected.is_thread_on():
+        if args.log_to_read is not None and args.log_to_read != "":
+            log_thread.join()
 
 if __name__ == '__main__':
     print("Starting Flask Server")
-    if args.log_to_read is not None and args.log_to_read != "":
-        threading.Thread(target=read_log, daemon=True).start()
     app.run(host='0.0.0.0', port=args.port, debug=False)
+
+    if num_connected.is_thread_on():
+        num_connected.set_num_connected(0)
+        log_thread.join()
 
