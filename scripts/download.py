@@ -159,7 +159,7 @@ def GrabYT(urls, destination_dir):
         # grab the file into our temp path
         print(f"[PH]Grabbing: {video.title}")
         video_stream.on_progress = partial(on_video_download, video_stream)
-        saved_file = video_stream.download(destination_dir, final_name)
+        saved_file = video_stream.download(destination_dir, "temp_" + final_name)
 
         # grab the subtitles if any
         subtitle_tracks = video.captions
@@ -197,7 +197,6 @@ def GrabYT(urls, destination_dir):
 
         if index > 0:
             # Combine video and subtitles using ffmpeg
-            final_name = f"{detox_filename(video.title)}_with_subtitles.{video_stream.subtype}"
             output_file = os.path.join(destination_dir, final_name)
 
             ffmpeg_cmd = [
