@@ -13,11 +13,11 @@ It will also create a ./input folder.
 The service will be run as the user who called ./install.sh
 
 Usage:
-    make a new file inside of ./input that has a single porhub or vrporn url in each line.
-    The service should pick it up and place each download inside of an ./output folder 
+    make a new file inside of ./input that has a single youtube, porhub or vrporn url in each line.
+    The service should pick it up and place each download inside of the folder specified by ./config/output_paths
     When all videos are downloaded, that source file will be removed
 
-    If you want to change the output folder, just modify the `folder_to_save` variable inside of ./scripts/monitor.sh
+    If you want to change the output folder, just modify the ./config/output_paths config file
 
 VRPorn:
     VRPorn requires an account to download.  You can specify your account's username and password inside 
@@ -45,5 +45,5 @@ Webserver:
 
 
 Special Thanks:
-    Special thanks to https://github.com/Egsagon/PHUB.git for doing the hard work for me
+    Special thanks to https://github.com/Egsagon/PHUB.git for doing the hard work for me for pornhub
     
