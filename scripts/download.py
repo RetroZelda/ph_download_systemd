@@ -18,6 +18,7 @@ from vrp_scrape import VRP_VideoData
 from vrp_scrape import VRP_Authenticate
 
 from pytube import YouTube
+from pytube import Playlist
 
 from functools import partial
 from collections import namedtuple
@@ -52,7 +53,7 @@ def GrabPH(urls, destination_dir):
         final_name = f"{detox_filename(video.title)}.mp4"
         
         # grab the file into our temp path
-        print(f"[PH]Grabbing: {video.title}")
+        print(f"[PH] Grabbing: {video.title}")
         temp_file = f"{destination_dir}/{final_name}"
         saved_file = video.download(path = temp_file, quality = Quality.BEST)
 
@@ -70,7 +71,7 @@ def GrabVRP(urls, destination_dir):
         with open(credentials_filename, 'r') as json_file:
             auth_credentials = json.load(json_file)
     except FileNotFoundError:
-        print(f"[vrp]{credentials_filename} not found.")
+        print(f"[vrp] {credentials_filename} not found.")
         return []
 
     vrp_auth = VRP_Authenticate(auth_credentials['username'], auth_credentials['password'])
@@ -109,7 +110,7 @@ def GrabYT(urls, destination_dir):
         percentage = (bytes_downloaded / total_size) * 100
 
         file_handle.write(chunk)
-        print(f"Downloading \"{stream.title}\" Progress: {percentage:.2f}%")
+        print(f"[Youtube] Downloading \"{stream.title}\" Progress: {percentage:.2f}%")
 
     def xml_caption_to_srt(self, xml_captions: str) -> str:
         """Convert xml caption tracks to "SubRip Subtitle (srt)".
@@ -146,73 +147,85 @@ def GrabYT(urls, destination_dir):
                 segments.append(line)
                 i += 1
         return "\n".join(segments).strip()
-
+        
     grabbed_files = []
     for url in urls:
         
-        video = YouTube(url)
-        video_stream = video.streams.get_highest_resolution()
-
-        subfolder = f"{detox_filename(video.author)}"
-        final_name = f"{detox_filename(video.title)}.{video_stream.subtype}"
-        
-        # grab the file into our temp path
-        print(f"[PH]Grabbing: {video.title}")
-        video_stream.on_progress = partial(on_video_download, video_stream)
-        saved_file = video_stream.download(destination_dir, "temp_" + final_name)
-
-        # grab the subtitles if any
-        subtitle_tracks = video.captions
-        ffmpeg_subtitle_inputs = []
-        ffmpeg_subtitle_maps = []
-        ffmpeg_subtitle_metadata = []
-        index = 0
-        for track in subtitle_tracks:
-            print(f"Downloading subtitle track: {track.name}")
-            
-            language_code = track.code
-            if language_code.startswith("a."):
-                language_code = language_code[2:]
-
-            srt_subtitles = xml_caption_to_srt(track, track.xml_captions)
-            srt_subtitles_file_name = f"{final_name}_subtitle_{track.code}.srt"
-            
-            srt_subtitles_file = os.path.join(destination_dir, srt_subtitles_file_name)
-            with open(os.path.join(srt_subtitles_file), 'w', encoding='utf-8') as file:
-                file.write(srt_subtitles)
-
-            print(f"Subtitle track '{track.name}' downloaded and converted to {srt_subtitles_file}")
-
-            ffmpeg_subtitle_inputs.append("-i")
-            ffmpeg_subtitle_inputs.append(srt_subtitles_file)
-            ffmpeg_subtitle_maps.append("-map")
-            ffmpeg_subtitle_maps.append(f"{index + 1}") # because map 0 will be the input file later
-            ffmpeg_subtitle_metadata.append(f"-metadata:s:s:{index}")
-            ffmpeg_subtitle_metadata.append(f"language={language_code}")
-            ffmpeg_subtitle_metadata.append(f"-metadata:s:s:{index}")
-            ffmpeg_subtitle_metadata.append(f"title={track.name}")
-
-            index += 1
-
-
-        if index > 0:
-            # Combine video and subtitles using ffmpeg
-            output_file = os.path.join(destination_dir, final_name)
-
-            ffmpeg_cmd = [
-                "ffmpeg",
-                "-i", saved_file] + ffmpeg_subtitle_inputs + [
-                "-map", "0"] +  ffmpeg_subtitle_maps + [
-                "-c:v", "copy",
-                "-c:a", "copy",
-                "-c:s", "mov_text"] + ffmpeg_subtitle_metadata + [
-                 output_file
-            ]
-
-            subprocess.run(ffmpeg_cmd)
-            grabbed_files.append(VideoFileData(Filename=final_name, SubFolder=subfolder, File=output_file))
+        videos = []
+        playlist_path = None
+        if "list" in url:
+            playlist = Playlist(url)
+            print(f"[Youtube] Found Playlist: {playlist.title}")
+            playlist_path = f"{detox_filename(playlist.owner)}/{detox_filename(playlist.title)}"
+            for playlist_video in playlist.video_urls:
+                videos.append(YouTube(playlist_video))
         else:
-            grabbed_files.append(VideoFileData(Filename=final_name, SubFolder=subfolder, File=saved_file))
+            videos.append(YouTube(url))
+
+        for video in videos:
+            video_stream = video.streams.get_highest_resolution()
+
+            subfolder = playlist_path if playlist_path is not None else f"{detox_filename(video.author)}"
+            final_name = f"{detox_filename(video.title)}.{video_stream.subtype}"
+            
+            # grab the file into our temp path
+            print(f"[Youtube] Grabbing: {video.title}")
+            video_stream.on_progress = partial(on_video_download, video_stream)
+            saved_file = video_stream.download(destination_dir, "temp_" + final_name)
+
+            # grab the subtitles if any
+            subtitle_tracks = video.captions
+            ffmpeg_subtitle_inputs = []
+            ffmpeg_subtitle_maps = []
+            ffmpeg_subtitle_metadata = []
+            index = 0
+            for track in subtitle_tracks:
+                print(f"[Youtube] Downloading subtitle track: {track.name}")
+                
+                language_code = track.code
+                if language_code.startswith("a."):
+                    language_code = language_code[2:]
+
+                srt_subtitles = xml_caption_to_srt(track, track.xml_captions)
+                srt_subtitles_file_name = f"{final_name}_subtitle_{track.code}.srt"
+                
+                srt_subtitles_file = os.path.join(destination_dir, srt_subtitles_file_name)
+                with open(os.path.join(srt_subtitles_file), 'w', encoding='utf-8') as file:
+                    file.write(srt_subtitles)
+
+                print(f"[Youtube] Subtitle track '{track.name}' downloaded and converted to {srt_subtitles_file}")
+
+                ffmpeg_subtitle_inputs.append("-i")
+                ffmpeg_subtitle_inputs.append(srt_subtitles_file)
+                ffmpeg_subtitle_maps.append("-map")
+                ffmpeg_subtitle_maps.append(f"{index + 1}") # because map 0 will be the input file later
+                ffmpeg_subtitle_metadata.append(f"-metadata:s:s:{index}")
+                ffmpeg_subtitle_metadata.append(f"language={language_code}")
+                ffmpeg_subtitle_metadata.append(f"-metadata:s:s:{index}")
+                ffmpeg_subtitle_metadata.append(f"title={track.name}")
+
+                index += 1
+
+
+            if index > 0:
+                # Combine video and subtitles using ffmpeg
+                output_file = os.path.join(destination_dir, final_name)
+
+                ffmpeg_cmd = [
+                    "ffmpeg",
+                    "-i", saved_file] + ffmpeg_subtitle_inputs + [
+                    "-map", "0"] +  ffmpeg_subtitle_maps + [
+                    "-c:v", "copy",
+                    "-c:a", "copy",
+                    "-c:s", "mov_text"] + ffmpeg_subtitle_metadata + [
+                    output_file
+                ]
+
+                print(f"[Youtube] Baking the subtitles")
+                subprocess.run(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                grabbed_files.append(VideoFileData(Filename=final_name, SubFolder=subfolder, File=output_file))
+            else:
+                grabbed_files.append(VideoFileData(Filename=final_name, SubFolder=subfolder, File=saved_file))
 
     return grabbed_files
 
@@ -269,13 +282,13 @@ def main():
         # move if we got some
         for video_data in obtained_videos:
             # ensure our target dir exists
-            output_path = f"{output_path}/{video_data.SubFolder}"
-            if not os.path.exists(output_path):
-                print(f"Creating: {output_path}")
-                os.makedirs(output_path)
+            final_path = f"{output_path}/{video_data.SubFolder}"
+            if not os.path.exists(final_path):
+                print(f"Creating: {final_path}")
+                os.makedirs(final_path)
 
             # move the file to our target dir
-            final_final = f"{output_path}/{video_data.Filename}"
+            final_final = f"{final_path}/{video_data.Filename}"
             print(f"Moving to: {final_final}")
             shutil.move(video_data.File, final_final)
             
