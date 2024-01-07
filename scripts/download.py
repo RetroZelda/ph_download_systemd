@@ -19,6 +19,7 @@ from vrp_scrape import VRP_Authenticate
 
 from pytube import YouTube
 from pytube import Playlist
+from pytube import exceptions
 
 from functools import partial
 from collections import namedtuple
@@ -147,23 +148,47 @@ def GrabYT(urls, destination_dir):
                 segments.append(line)
                 i += 1
         return "\n".join(segments).strip()
-        
+
     grabbed_files = []
     for url in urls:
         
         videos = []
         playlist_path = None
+        use_oauth = False
+        oauth_cache = False
         if "list" in url:
             playlist = Playlist(url)
             print(f"[Youtube] Found Playlist: {playlist.title}")
             playlist_path = f"{detox_filename(playlist.owner)}/{detox_filename(playlist.title)}"
             for playlist_video in playlist.video_urls:
-                videos.append(YouTube(playlist_video))
+                videos.append(YouTube(playlist_video + "&has_verified=1", use_oauth=use_oauth, allow_oauth_cache=oauth_cache))
         else:
-            videos.append(YouTube(url))
+            videos.append(YouTube(url + "&has_verified=1", use_oauth=use_oauth, allow_oauth_cache=oauth_cache))
 
         for video in videos:
-            video_stream = video.streams.get_highest_resolution()
+            video_stream = None
+            try:
+                if video.age_restricted:
+                    video.bypass_age_gate()
+                video_stream = video.streams.get_highest_resolution()
+            except exceptions.AgeRestrictedError:
+                print(f'Video {video.title} is age restricted, skipping.')
+                continue
+            except exceptions.MembersOnly:
+                print(f'Video {video.title} is for members only, skipping.')
+                continue
+            except exceptions.VideoPrivate:
+                print(f'Video {video.title} is private, skipping.')
+                continue
+            except exceptions.VideoRegionBlocked:
+                print(f'Video {video.title} is region blocked, skipping.')
+                continue
+            except exceptions.LiveStreamError:
+                print(f'Video {video.title} is a live stream, skipping.')
+                continue
+            except exceptions.VideoUnavailable:
+                print(f'Video {video.title} is unavaialable, skipping.')
+                continue
 
             subfolder = playlist_path if playlist_path is not None else f"{detox_filename(video.author)}"
             final_name = f"{detox_filename(video.title)}.{video_stream.subtype}"
