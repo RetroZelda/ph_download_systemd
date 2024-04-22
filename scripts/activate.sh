@@ -13,7 +13,7 @@ echo "Creating virtual environment..."
 echo "Activating virtual environment..."
 source "$venv_name/bin/activate" 
 
-pip3 install --upgrade git+https://github.com/Egsagon/PHUB.git
+pip3 install --upgrade git+https://github.com/EchterAlsFake/PHUB.git
 pip install ffmpeg_progress_yield
 pip3 install BeautifulSoup4
 pip3 install validators
