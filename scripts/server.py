@@ -67,8 +67,6 @@ def read_log(data):
 
                 if new_lines:
                     socketio.emit('update_log', {'new_lines': new_lines})
-                else:
-                    time.sleep(1)
 
                 last_position = log_file.tell()  # Update the last position to the current position in the file
         except FileNotFoundError:
