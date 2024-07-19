@@ -135,6 +135,8 @@ def GrabYT(urls, destination_dir):
                 if len(list(child))==0:
                     # instead of 'continue'
                     caption = child.text
+                    if caption is None:
+                        caption = ""
                 for s in list(child):
                     if s.tag == 's':
                         caption += ' ' + s.text
