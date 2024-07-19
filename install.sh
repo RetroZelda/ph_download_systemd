@@ -13,19 +13,21 @@ target_user=$SUDO_USER
 
 if [ ! -d "$log_dir" ]; then
     echo "Creating folder: $log_dir"
-    mkdir -p "$log_dir"
+    sudo -u $target_user mkdir -p "$log_dir"
 fi
 
 # Create the systemd service unit file
 cat <<EOF | sudo tee /etc/systemd/system/$service_name > /dev/null
 [Unit]
-Description=Download videos from PornHub
-After=network.target
+Description=Download videos from Youtube, PornHub, and VRPorn
+After=network.target network-online.target
+Wants=network-online.target
 
 [Service]
 Type=oneshot
 User=$target_user
 RemainAfterExit=true
+ExecStartPre=/bin/sleep 30
 WorkingDirectory=$script_dir
 ExecStart=$script_dir/activate.sh
 ExecStop=$script_dir/deactivate.sh
@@ -37,7 +39,7 @@ WantedBy=default.target
 EOF
 
 # ensure we have the log file
-touch $log_dir/general.log
+sudo -u $target_user touch $log_dir/general.log
 
 # ensure we have all the needed packages
 apt install inotify-tools
