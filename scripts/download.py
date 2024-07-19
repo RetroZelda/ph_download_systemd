@@ -244,7 +244,7 @@ def GrabYT(urls, destination_dir):
                     saved_audio = None
 
             if saved_audio is not None:
-                combined_file = "temp_c_" + f"{detox_filename(video.title)}.{video_stream.subtype}"
+                combined_file = os.path.join(destination_dir, "temp_c_" + f"{detox_filename(video.title)}.{video_stream.subtype}")
                 ffmpeg_command = [
                     'ffmpeg',
                     '-y',
