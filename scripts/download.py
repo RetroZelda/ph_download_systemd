@@ -17,9 +17,9 @@ from vrp_scrape import VRP_Page
 from vrp_scrape import VRP_VideoData
 from vrp_scrape import VRP_Authenticate
 
-from pytube import YouTube
-from pytube import Playlist
-from pytube import exceptions
+from pytubefix import YouTube
+from pytubefix import Playlist
+from pytubefix import exceptions
 
 from functools import partial
 from collections import namedtuple
@@ -80,8 +80,7 @@ def GrabVRP(urls, destination_dir):
 
     # ensure we are authenticated
     if not vrp_auth.IsAuthenticated():
-        vrp_auth.Authenticate()
-        if vrp_auth.IsAuthenticated():
+        if vrp_auth.Authenticate():
             vrp_auth.SaveCookies(cookie_cache_filename)
         else:
             return []
@@ -111,7 +110,15 @@ def GrabYT(urls, destination_dir):
         percentage = (bytes_downloaded / total_size) * 100
 
         file_handle.write(chunk)
-        print(f"[Youtube] Downloading \"{stream.title}\" Progress: {percentage:.2f}%")
+        print(f"[Youtube] Downloading Video \"{stream.title}\" Progress: {percentage:.2f}%")
+
+    def on_audio_download(stream, chunk, file_handle, bytes_remaining):
+        total_size = stream.filesize
+        bytes_downloaded = total_size - bytes_remaining
+        percentage = (bytes_downloaded / total_size) * 100
+
+        file_handle.write(chunk)
+        print(f"[Youtube] Downloading Audio \"{stream.title}\" Progress: {percentage:.2f}%")
 
     def xml_caption_to_srt(self, xml_captions: str) -> str:
         """Convert xml caption tracks to "SubRip Subtitle (srt)".
@@ -122,8 +129,8 @@ def GrabYT(urls, destination_dir):
         segments = []
         root = ElementTree.fromstring(xml_captions)
         i=0
-        for child in list(root.iter("body"))[0]:
-            if child.tag == 'p':
+        for child in root:
+            if child.tag == 'text':
                 caption = ''
                 if len(list(child))==0:
                     # instead of 'continue'
@@ -133,10 +140,10 @@ def GrabYT(urls, destination_dir):
                         caption += ' ' + s.text
                 caption = unescape(caption.replace("\n", " ").replace("  ", " "),)
                 try:
-                    duration = float(child.attrib["d"])/1000.0
+                    duration = float(child.attrib["dur"])
                 except KeyError:
                     duration = 0.0
-                start = float(child.attrib["t"])/1000.0
+                start = float(child.attrib["start"])
                 end = start + duration
                 sequence_number = i + 1  # convert from 0-indexed to 1.
                 line = "{seq}\n{start} --> {end}\n{text}\n".format(
@@ -170,7 +177,19 @@ def GrabYT(urls, destination_dir):
             try:
                 if video.age_restricted:
                     video.bypass_age_gate()
-                video_stream = video.streams.get_highest_resolution()
+                video_stream = None
+                audio_stream = None
+                for stream in video.streams.filter(file_extension='mp4', type='video').order_by('resolution').desc():
+                    if stream.includes_video_track:
+                        video_stream = stream
+                        break
+                
+                if video_stream and not video_stream.includes_audio_track:
+                    for stream in video.streams.filter(file_extension='mp4', type='audio').order_by('bitrate').desc():
+                        if stream.includes_audio_track:
+                            audio_stream = stream
+                            break
+
             except exceptions.AgeRestrictedError:
                 print(f'Video {video.title} is age restricted, skipping.')
                 continue
@@ -190,13 +209,56 @@ def GrabYT(urls, destination_dir):
                 print(f'Video {video.title} is unavaialable, skipping.')
                 continue
 
+            if video_stream is None:
+                print(f'Video {video.title} doesnt have a valid video stream, skipping.')
+                continue
+
+            if not video_stream.includes_audio_track and audio_stream is None:
+                print(f'Video {video.title} doesnt have a valid audio stream. Continuing without audio.')
+                
+
             subfolder = playlist_path if playlist_path is not None else f"{detox_filename(video.author)}"
             final_name = f"{detox_filename(video.title)}.{video_stream.subtype}"
             
-            # grab the file into our temp path
-            print(f"[Youtube] Grabbing: {video.title}")
+            # grab the files into our temp path
+            print(f"[Youtube] Grabbing Video: {video.title}")
             video_stream.on_progress = partial(on_video_download, video_stream)
-            saved_file = video_stream.download(destination_dir, "temp_" + final_name)
+
+            saved_video = None
+            try:
+                saved_video = video_stream.download(destination_dir, "temp_v_" + final_name)
+            except:
+                print(f'Video {video.title} is unable to download, skipping.')
+                continue
+
+            saved_audio = None
+            if audio_stream is not None:
+                print(f"[Youtube] Grabbing Audio: {video.title}")
+                audio_stream.on_progress = partial(on_audio_download, audio_stream)
+                try:
+                    saved_audio = audio_stream.download(destination_dir, "temp_a_" + f"{detox_filename(video.title)}.{audio_stream.subtype}")
+                except:
+                    print(f'Audio for {video.title} was unable to download.')
+                    saved_audio = None
+
+            if saved_audio is not None:
+                combined_file = "temp_c_" + f"{detox_filename(video.title)}.{video_stream.subtype}"
+                ffmpeg_command = [
+                    'ffmpeg',
+                    '-i', saved_video,        # Input video file
+                    '-i', saved_audio,        # Input audio file
+                    '-c', 'copy',            # Copy codec (no re-encoding)
+                    '-map', '0:v',           # Map video stream from first input
+                    '-map', '1:a',           # Map audio stream from second input
+                    combined_file
+                ]
+
+                # Execute the ffmpeg command
+                print(f"[Youtube] Joining Video and Audio: {video.title}")
+                subprocess.run(ffmpeg_command)
+                os.remove(saved_audio)
+                saved_video = combined_file
+                
 
             # grab the subtitles if any
             subtitle_tracks = video.captions
@@ -238,7 +300,7 @@ def GrabYT(urls, destination_dir):
 
                 ffmpeg_cmd = [
                     "ffmpeg",
-                    "-i", saved_file] + ffmpeg_subtitle_inputs + [
+                    "-i", saved_video] + ffmpeg_subtitle_inputs + [
                     "-map", "0"] +  ffmpeg_subtitle_maps + [
                     "-c:v", "copy",
                     "-c:a", "copy",
@@ -248,9 +310,10 @@ def GrabYT(urls, destination_dir):
 
                 print(f"[Youtube] Baking the subtitles")
                 subprocess.run(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                os.remove(saved_video)
                 grabbed_files.append(VideoFileData(Filename=final_name, SubFolder=subfolder, File=output_file))
             else:
-                grabbed_files.append(VideoFileData(Filename=final_name, SubFolder=subfolder, File=saved_file))
+                grabbed_files.append(VideoFileData(Filename=final_name, SubFolder=subfolder, File=saved_video))
 
     return grabbed_files
 
