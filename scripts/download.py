@@ -247,6 +247,7 @@ def GrabYT(urls, destination_dir):
                 combined_file = "temp_c_" + f"{detox_filename(video.title)}.{video_stream.subtype}"
                 ffmpeg_command = [
                     'ffmpeg',
+                    '-y',
                     '-i', saved_video,        # Input video file
                     '-i', saved_audio,        # Input audio file
                     '-c', 'copy',            # Copy codec (no re-encoding)
@@ -258,6 +259,7 @@ def GrabYT(urls, destination_dir):
                 # Execute the ffmpeg command
                 print(f"[Youtube] Joining Video and Audio: {video.title}")
                 subprocess.run(ffmpeg_command)
+                os.remove(saved_video)
                 os.remove(saved_audio)
                 saved_video = combined_file
                 
@@ -302,6 +304,7 @@ def GrabYT(urls, destination_dir):
 
                 ffmpeg_cmd = [
                     "ffmpeg",
+                    '-y',
                     "-i", saved_video] + ffmpeg_subtitle_inputs + [
                     "-map", "0"] +  ffmpeg_subtitle_maps + [
                     "-c:v", "copy",
