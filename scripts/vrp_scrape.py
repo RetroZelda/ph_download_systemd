@@ -26,6 +26,9 @@ class VRP_Authenticate:
             print(f"{filename} has invalid JSON")
 
     def IsAuthenticated(self):
+        def remove_all_whitespace(s):
+            return s.replace(" ", "").replace("\t", "").replace("\n", "").replace("\r", "")
+
         url = f"{self.BaseURL}/account"
 
         # Fetch the webpage
@@ -34,12 +37,12 @@ class VRP_Authenticate:
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
 
-            # Find the span element with class "account-name"
-            account_name_span = soup.find('span', class_='account-name')
+            # Find the span element with class "account-displayname"
+            account_name_span = soup.find('div', class_='account-displayname')
 
             if account_name_span:
                 # Print the text content of the found span
-                print("Authenticated as:", account_name_span.text)
+                print("Authenticated as:", remove_all_whitespace(account_name_span.text))
                 return True
         print(f"Not Authenticated")
         return False
