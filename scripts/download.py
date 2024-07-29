@@ -271,6 +271,9 @@ def GrabYT(urls, destination_dir):
             ffmpeg_subtitle_metadata = []
             index = 0
             for track in subtitle_tracks:
+                if track.xml_captions == '':
+                    print(f"[Youtube] Failed downloading subtitle track: {track.name}")
+                    continue
                 print(f"[Youtube] Downloading subtitle track: {track.name}")
                 
                 language_code = track.code
